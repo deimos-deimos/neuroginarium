@@ -6,8 +6,11 @@ from .model import *
 from enum import Enum
 
 NUMBER_OF_CARDS_IN_HAND = 6
+
+
 class CardState(Enum):
     deck, hand, picked, wasted = range(4)
+
 
 class DBHelper:
     def __init__(self, pony_db: Database, logger):
@@ -30,9 +33,7 @@ class DBHelper:
                     f"{user_id}:{username} is a new player with no record in DB"
                 )
                 new_player = Player(id=user_id, username=username, deck=Deck())
-                self.logger.info(
-                    f"{user_id}: {username} registered in DB"
-                )
+                self.logger.info(f"{user_id}: {username} registered in DB")
             else:
                 self.logger.info(f"{user_id}: {username} already exists in DB")
 
@@ -71,7 +72,9 @@ class DBHelper:
                 )
                 return player_deck_cards
 
-    def get_user_card_path_by_id(self, user_id: int, card_id: int) -> type_optional[str]:
+    def get_user_card_path_by_id(
+        self, user_id: int, card_id: int
+    ) -> type_optional[str]:
         with db_session:
             player = Player.get(id=user_id)
             if player is None:
@@ -104,9 +107,7 @@ class DBHelper:
                     return False
                 elif card_to_delete.author == player:
                     card_to_delete.delete()
-                    self.logger.info(
-                        f"{user_id}: successfully deleted card {card_id}"
-                    )
+                    self.logger.info(f"{user_id}: successfully deleted card {card_id}")
                     return True
                 else:
                     self.logger.info(
@@ -127,7 +128,7 @@ class DBHelper:
         return game.id
 
     def add_user_to_game(self, user_id: int, game_id: int) -> type_optional[str]:
-        print(f'adding to game: {game_id}')
+        print(f"adding to game: {game_id}")
         with db_session:
             player = Player.get(id=user_id)
             if player is None:
@@ -138,27 +139,29 @@ class DBHelper:
             else:
                 game = Game.get(id=game_id)
                 if game is None:
-                    self.logger.error(
-                    f"{game_id}:no such game"
-                )
+                    self.logger.error(f"{game_id}:no such game")
                     return None
                 else:
-                    print(f'found the game! {game.id}')
+                    print(f"found the game! {game.id}")
                     game.players.add(player)
                     player.score = 0
                     player.is_current_player = False
                     player.game = game
                     return player.username, [player.id for player in game.players]
-    
+
     def start_user_game(self, user_id: int):
         with db_session:
             host_player = Player.get(id=user_id)
             if host_player is None:
-                self.logger.error(f"{user_id} requested to start the game but he has no record in DB")
+                self.logger.error(
+                    f"{user_id} requested to start the game but he has no record in DB"
+                )
             else:
                 game = host_player.game
                 if game is None:
-                    self.logger.error(f"{user_id} requested to start the game but no game record in DB")
+                    self.logger.error(
+                        f"{user_id} requested to start the game but no game record in DB"
+                    )
                 else:
                     all_cards = []
                     for player in game.players:
@@ -166,14 +169,10 @@ class DBHelper:
 
                     # TODO: check number of players vs number of cards relation
                     for card in all_cards:
-                        CardGameState(
-                            game=game,
-                            card=card,
-                            state=CardState.deck.name
-                        )
+                        CardGameState(game=game, card=card, state=CardState.deck.name)
 
                     # TODO: change for shuffle and 6 cards
-                    #for card_in_game, player in zip(game.cards, game.players):
+                    # for card_in_game, player in zip(game.cards, game.players):
                     #    card_in_game.in_hand = player
                     #    player.game_owner = card_in_game
                     #    print('\n\nplayer!', player.username)
@@ -193,8 +192,12 @@ class DBHelper:
                     if username_to_kick not in [p.username for p in game.players]:
                         return None
                     else:
-                        kicked_player = [p for p in game.players if p.username == username_to_kick][0]
-                        game.players = set((p for p in game.players if p.username != username_to_kick))
+                        kicked_player = [
+                            p for p in game.players if p.username == username_to_kick
+                        ][0]
+                        game.players = set(
+                            (p for p in game.players if p.username != username_to_kick)
+                        )
                         # TODO: update current player and score
                         kicked_player.game = None
                         return kicked_player.id, [p.id for p in game.players]
@@ -219,19 +222,14 @@ class DBHelper:
             player = Player.get(id=user_id)
             game = player.game
             current_player = [p for p in game.players if p.is_current_player][0]
-            #images = [one.card.image_path for one in current_player.game_owner]
+            # images = [one.card.image_path for one in current_player.game_owner]
         return current_player.id, []
-
 
 
 def create_inmemory_db():
     logger = logging.getLogger(__name__)
     db_helper = DBHelper(db, logger)
-    db_helper.bind_db({
-        "type": "sqlite",
-        "sqlite": {
-            "filename": ":memory:",
-            "create_db": True
-            }
-    })
+    db_helper.bind_db(
+        {"type": "sqlite", "sqlite": {"filename": ":memory:", "create_db": True}}
+    )
     return db_helper

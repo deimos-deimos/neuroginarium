@@ -1,10 +1,7 @@
 import yaml
 import logging
 import sys
-from telegram import (
-    Update,
-    User
-)
+from telegram import Update, User
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -49,7 +46,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        logger.error("No config path provided as cli input! Run app like this: python main.py config.yml")
+        logger.error(
+            "No config path provided as cli input! Run app like this: python main.py config.yml"
+        )
 
     config_path = sys.argv[1]
     with open(config_path, "r") as yamlfile:
@@ -69,7 +68,9 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("start", start))
 
-    application.add_handler(ViewDeckHandler(image_getter, image_storage, db_helper, num_of_variants)())
+    application.add_handler(
+        ViewDeckHandler(image_getter, image_storage, db_helper, num_of_variants)()
+    )
     application.add_handler(GameplayHandler(db_helper, image_storage)())
 
     application.run_polling()
