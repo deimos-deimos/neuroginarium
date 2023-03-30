@@ -1,5 +1,4 @@
 from pony.orm import *
-from typing import Dict
 
 
 db = Database()

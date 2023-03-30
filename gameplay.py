@@ -53,6 +53,7 @@ class GameplayHandler:
                 PLAYING_STATE: [
                     CommandHandler("kick_user", self.kick_user),
                     CommandHandler("leave_game", self.leave_game),
+                    #MessageHandler(filters.Regex("^\d$"), self.add_card),
                 ],
             },
             fallbacks=[CommandHandler("cancel", self.cancel)],
@@ -95,30 +96,30 @@ class GameplayHandler:
         )
         for user_id in all_users:
             await context.bot.send_message(
-                user_id, f"Game is started:\nNumber of cards = {number_of_cards}"
+                user_id, f"Game is started:\nNumber of cards: {number_of_cards}"
             )
 
         current_player, hand = self.db_helper.current_player_move(
             update.message.from_user.id
         )
         images = []
-        # for card_path in hand:
-        #    await images.append(self.image_storage.load_image(card_path))
-        await context.bot.send_message(current_player, f"Your turn dude!")
+        for card_path in sorted(hand):
+            new_image = await self.image_storage.load_image(card_path)
+            images.append(new_image)
 
-        # media_group = [
-        #     InputMediaPhoto(media=image, caption=str(i + 1))
-        #     for i, image in enumerate(images)
-        # ]
-        # await context.bot.send_media_group(current_player, media=media_group)
-        # await context.bot.send_message(
-        #     current_player,
-        #     text = "Choose the best of cards:",
-        #     reply_markup=ReplyKeyboardMarkup(
-        #         [[str(i + 1) for i in range(self.num_of_variants)], ["None"]],
-        #         one_time_keyboard=True,
-        #     ),
-        # )
+        media_group = [
+            InputMediaPhoto(media=image, caption=str(i + 1))
+            for i, image in enumerate(images)
+        ]
+        await context.bot.send_media_group(current_player, media=media_group)
+        await context.bot.send_message(
+            current_player,
+            text = "Choose one card",
+            reply_markup=ReplyKeyboardMarkup(
+                [[str(i + 1) for i in range(len(images))]],
+                one_time_keyboard=True,
+            ),
+        )
 
         return PLAYING_STATE
 
