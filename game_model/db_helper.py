@@ -4,8 +4,10 @@ import logging
 from telegram import User
 from .model import *
 from enum import Enum
+from random import shuffle
+from itertools import repeat
 
-NUMBER_OF_CARDS_IN_HAND = 6
+NUMBER_OF_CARDS_IN_HAND = 2
 
 
 class CardState(Enum):
@@ -166,16 +168,18 @@ class DBHelper:
                     all_cards = []
                     for player in game.players:
                         all_cards.extend(player.deck.cards)
+                        player.game_owner = {}
 
+                    shuffle(all_cards)
                     # TODO: check number of players vs number of cards relation
                     for card in all_cards:
                         CardGameState(game=game, card=card, state=CardState.deck.name)
 
-                    # TODO: change for shuffle and 6 cards
-                    # for card_in_game, player in zip(game.cards, game.players):
-                    #    card_in_game.in_hand = player
-                    #    player.game_owner = card_in_game
-                    #    print('\n\nplayer!', player.username)
+                    for player in game.players:
+                        for _ in range(NUMBER_OF_CARDS_IN_HAND):
+                            card_in_game = [c for c in game.cards if c.state == CardState.deck.name][0] # this is terrible
+                            card_in_game.in_hand = player
+                            card_in_game.state = CardState.hand.name
 
                     return [p.id for p in game.players], len(all_cards)
 
@@ -222,8 +226,8 @@ class DBHelper:
             player = Player.get(id=user_id)
             game = player.game
             current_player = [p for p in game.players if p.is_current_player][0]
-            # images = [one.card.image_path for one in current_player.game_owner]
-        return current_player.id, []
+            images = [c.card.image_path for c in current_player.game_owner]
+        return current_player.id, images
 
 
 def create_inmemory_db():
